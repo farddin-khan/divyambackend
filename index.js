@@ -18,7 +18,7 @@ app.use("/api/loyalty", loyaltyRoutes);
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const loyaltyRoutes = require("./routes/loyalty");
+// const loyaltyRoutes = require("./routes/loyalty");
 
 app.use("/api/loyalty", loyaltyRoutes);
 
