@@ -20,7 +20,7 @@ const __dirname = path.dirname(__filename);
 
 // const loyaltyRoutes = require("./routes/loyalty");
 
-app.use("/api/loyalty", loyaltyRoutes);
+// app.use("/api/loyalty", loyaltyRoutes);
 
 
 // Load environment variables from .env files
