@@ -11,8 +11,17 @@ import { sendShiprocketOrder } from './shiprocket.js';
 import crypto from 'crypto';
 import nodemailer from 'nodemailer';
 import { buildProductPayload, normalizeImages, normalizeBenefits } from './utils/adminProductUtils.js';
+import loyaltyRoutes from "./routes/loyaltyRoutes.js";
+
+app.use("/api/loyalty", loyaltyRoutes);
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+const loyaltyRoutes = require("./routes/loyalty");
+
+app.use("/api/loyalty", loyaltyRoutes);
+
 
 // Load environment variables from .env files
 const envPath = path.resolve(__dirname, '../.env');
