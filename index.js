@@ -13,14 +13,9 @@ import nodemailer from 'nodemailer';
 import { buildProductPayload, normalizeImages, normalizeBenefits } from './utils/adminProductUtils.js';
 import loyaltyRoutes from "./routes/loyaltyRoutes.js";
 
-app.use("/api/loyalty", loyaltyRoutes);
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-
-// const loyaltyRoutes = require("./routes/loyalty");
-
-// app.use("/api/loyalty", loyaltyRoutes);
 
 
 // Load environment variables from .env files
@@ -46,6 +41,7 @@ const app = express();
 const port = process.env.PORT || 4000;
 const REVIEW_APPROVAL_EMAIL = 'farddinkhan18@gmail.com';
 
+app.use("/api/loyalty", loyaltyRoutes);
 app.use(cors({ origin: process.env.CLIENT_ORIGIN || '*' }));
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
