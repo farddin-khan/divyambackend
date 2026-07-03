@@ -42,6 +42,7 @@ const port = process.env.PORT || 4000;
 const REVIEW_APPROVAL_EMAIL = 'farddinkhan18@gmail.com';
 
 app.use("/api/loyalty", loyaltyRoutes);
+
 app.use(cors({ origin: process.env.CLIENT_ORIGIN || '*' }));
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
@@ -1278,37 +1279,20 @@ app.post('/api/payment/verify-payment', async (req, res) => {
   }
 });
 
-const clientDistPath = path.resolve(__dirname, '../dist');
-app.use(express.static(clientDistPath));
-
-const indexHtmlPath = path.join(clientDistPath, 'index.html');
-let indexHtml = null;
-if (fs.existsSync(indexHtmlPath)) {
-  indexHtml = fs.readFileSync(indexHtmlPath, 'utf8');
-}
-
-app.get('*', (req, res, next) => {
-  if (req.path.startsWith('/api/')) {
-    return res.status(404).json({ error: 'Endpoint not found', path: req.path });
-  }
-
-  if (indexHtml) {
-    const injectedHtml = indexHtml.replace(
-      '</head>',
-      `<script>window.APP_API_URL = ${JSON.stringify(process.env.VITE_API_URL || '')};</script></head>`
-    );
-    return res.send(injectedHtml);
-  }
-
-  return res.sendFile(path.join(clientDistPath, 'index.html'), (error) => {
-    if (error) {
-      next(error);
-    }
+// Health Check
+app.get("/", (req, res) => {
+  res.json({
+    success: true,
+    message: "Divyam Backend API is running"
   });
 });
 
+// 404
 app.use((req, res) => {
-  res.status(404).json({ error: 'Endpoint not found', path: req.path });
+  res.status(404).json({
+    error: "Endpoint not found",
+    path: req.path
+  });
 });
 
 app.listen(port, () => {
