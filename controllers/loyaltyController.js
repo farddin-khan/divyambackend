@@ -11,19 +11,20 @@ export const getPoints = async (req, res) => {
 };
 
 export const blockPoints = async (req, res) => {
-  const { mobile_number, transactional_points, order_id } = req.body;
+  const { transactional_points, order_id } = req.body;
 
-  return res.json({
+  return res.status(200).json({
     data: {
       status: true,
       available_points: 950,
+      message: "Valid Customer Id",
       debited_points: transactional_points,
-      transaction_id: order_id,
+      transaction_id: String(order_id),
       discount_value: transactional_points,
       additional_properties: {
-        redemptionFactor: 1,
-      },
-    },
+        redemptionFactor: 1
+      }
+    }
   });
 };
 
