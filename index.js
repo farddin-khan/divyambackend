@@ -46,7 +46,11 @@ app.use("/api/loyalty", loyaltyRoutes);
 app.use(cors({ origin: process.env.CLIENT_ORIGIN || '*' }));
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
-app.use('/images', express.static(path.join(__dirname, '..', 'public', 'images')));
+// app.use('/images', express.static(path.join(__dirname, '..', 'public', 'images')));
+app.use(
+  "/uploads",
+  express.static(path.join(__dirname, "..", "uploads"))
+);
 
 app.post("/api/test", (req, res) => {
   res.json({
@@ -149,21 +153,25 @@ if (process.env.SMTP_HOST && process.env.SMTP_PORT && process.env.SMTP_USER && p
 }
 
 // Configure multer for multipart/form-data uploads to public/images/products
-const uploadDir = path.join(__dirname, '..', 'public', 'images', 'products');
-try {
-  fs.mkdirSync(uploadDir, { recursive: true });
-} catch (err) {}
+// const uploadDir = path.join(__dirname, '..', 'public', 'images', 'products');
+// try {
+//   fs.mkdirSync(uploadDir, { recursive: true });
+// } catch (err) {}
 
-const storage = multer.diskStorage({
-  destination: uploadDir,
-  filename: (req, file, cb) => {
-    const ext = path.extname(file.originalname) || '.png';
-    const filename = `${Date.now()}-${crypto.randomBytes(6).toString('hex')}${ext}`;
-    cb(null, filename);
+// const upload = multer({
+//   storage: multer.memoryStorage(),
+//     limits: {
+//         fileSize: 10 * 1024 * 1024
+//     }
+// });
+
+// const upload = multer({ storage, limits: { fileSize: 10 * 1024 * 1024 } });
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 10 * 1024 * 1024,
   },
 });
-
-const upload = multer({ storage, limits: { fileSize: 10 * 1024 * 1024 } });
 
 function escapeHtml(value = '') {
   return String(value)
@@ -284,26 +292,66 @@ function mapProductForShiprocket(product) {
   };
 }
 
+// async function saveDataUrlImage(dataUrl) {
+//   if (!dataUrl || typeof dataUrl !== 'string' || !dataUrl.startsWith('data:')) return null;
+//   const match = dataUrl.match(/^data:(image\/[-+a-zA-Z0-9.]+);base64,(.+)$/);
+//   if (!match) return null;
+//   const mime = match[1];
+//   const ext = mime.split('/')[1] || 'png';
+//   const base64 = match[2];
+//   const buffer = Buffer.from(base64, 'base64');
+//   const dir = path.join(__dirname, '..', 'public', 'images', 'products');
+//   try {
+//     fs.mkdirSync(dir, { recursive: true });
+//     const filename = `${Date.now()}-${crypto.randomBytes(6).toString('hex')}.${ext}`;
+//     const filePath = path.join(dir, filename);
+//     await fs.promises.writeFile(filePath, buffer);
+//     return `/images/products/${filename}`;
+//   } catch (err) {
+//     console.warn('saveDataUrlImage error:', err.message || err);
+//     return null;
+//   }
+// }
 async function saveDataUrlImage(dataUrl) {
-  if (!dataUrl || typeof dataUrl !== 'string' || !dataUrl.startsWith('data:')) return null;
+  if (!dataUrl || typeof dataUrl !== "string" || !dataUrl.startsWith("data:")) {
+    return null;
+  }
+
   const match = dataUrl.match(/^data:(image\/[-+a-zA-Z0-9.]+);base64,(.+)$/);
   if (!match) return null;
+
   const mime = match[1];
-  const ext = mime.split('/')[1] || 'png';
+  const ext = mime.split("/")[1] || "png";
   const base64 = match[2];
-  const buffer = Buffer.from(base64, 'base64');
-  const dir = path.join(__dirname, '..', 'public', 'images', 'products');
+
+  const buffer = Buffer.from(base64, "base64");
+
   try {
-    fs.mkdirSync(dir, { recursive: true });
-    const filename = `${Date.now()}-${crypto.randomBytes(6).toString('hex')}.${ext}`;
-    const filePath = path.join(dir, filename);
-    await fs.promises.writeFile(filePath, buffer);
-    return `/images/products/${filename}`;
+    const fileName = `${Date.now()}-${crypto.randomBytes(6).toString("hex")}.${ext}`;
+
+    const { error } = await supabase.storage
+      .from("products")   // <-- Bucket name
+      .upload(fileName, buffer, {
+        contentType: mime,
+      });
+
+    if (error) {
+      console.error(error);
+      return null;
+    }
+
+    const { data } = supabase.storage
+      .from("Products")
+      .getPublicUrl(fileName);
+
+    return data.publicUrl;
+
   } catch (err) {
-    console.warn('saveDataUrlImage error:', err.message || err);
+    console.warn("saveDataUrlImage error:", err.message || err);
     return null;
   }
 }
+
 
 function sendShiprocketFallback(res, key) {
   return res.json({
@@ -841,7 +889,25 @@ app.post('/api/admin/products', upload.array('images'), async (req, res) => {
     const processedImages = [];
     if (isMultipart) {
       for (const f of req.files) {
-        processedImages.push(`/images/products/${f.filename}`);
+        // processedImages.push(`/images/products/${f.filename}`); 
+        const fileName =
+`${Date.now()}-${crypto.randomBytes(6).toString("hex")}`;
+
+const { error } =
+await supabase.storage
+.from("Products")
+.upload(fileName, f.buffer, {
+contentType: f.mimetype
+});
+
+if(error) throw error;
+
+const { data } =
+supabase.storage
+.from("Products")
+.getPublicUrl(fileName);
+
+processedImages.push(data.publicUrl);
       }
     }
 
@@ -913,7 +979,26 @@ app.put('/api/admin/products/:id', upload.array('images'), async (req, res) => {
     const processedImages = [];
     if (req.files && req.files.length > 0) {
       for (const f of req.files) {
-        processedImages.push(`/images/products/${f.filename}`);
+        // processedImages.push(`/images/products/${f.filename}`);
+        const fileName =
+`${Date.now()}-${crypto.randomBytes(6).toString("hex")}`;
+
+const { error } =
+await supabase.storage
+.from("Products")
+.upload(fileName, f.buffer, {
+contentType: f.mimetype
+});
+
+if(error) throw error;
+
+const { data } =
+supabase.storage
+.from("Products")
+.getPublicUrl(fileName);
+
+processedImages.push(data.publicUrl);
+
       }
     }
 
