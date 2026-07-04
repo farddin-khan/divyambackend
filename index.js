@@ -256,27 +256,40 @@ function mapProductForShiprocket(product) {
     collection_handle: product.category?.slug || null,
     collection_title: product.category?.name || null,
     variants: [
-      {
-        id: variantId,
-        product_id: product.id,
-        title: product.variant_title || 'Default',
-        price: String(product.price ?? ''),
-        compare_at_price: product.compare_price == null ? '' : String(product.compare_price),
-        sku: product.sku || product.slug || `product-${product.id}`,
-        quantity: stockQuantity,
-        inventory_quantity: stockQuantity,
-        taxable: true,
-        requires_shipping: true,
-        grams: Number.isFinite(grams) ? grams : 0,
-        weight,
-        weight_unit: unit,
-        inventory_management: 'shopify',
-        inventory_policy: 'continue',
-        created_at: product.created_at,
-        updated_at: product.updated_at,
-        image: primaryImage,
-      },
-    ],
+  {
+    id: variantId,
+    product_id: product.id,
+
+    title: product.size || "Default",
+    option1: product.size || "Default",
+
+    price: String(product.price ?? ""),
+    compare_at_price:
+      product.compare_price == null
+        ? ""
+        : String(product.compare_price),
+
+    sku: product.sku || product.slug || `product-${product.id}`,
+
+    quantity: stockQuantity,
+    inventory_quantity: stockQuantity,
+
+    taxable: true,
+    requires_shipping: true,
+
+    grams: Number.isFinite(grams) ? grams : 0,
+    weight,
+    weight_unit: unit,
+
+    inventory_management: "shopify",
+    inventory_policy: "continue",
+
+    created_at: product.created_at,
+    updated_at: product.updated_at,
+
+    image: primaryImage,
+  },
+],
     images,
     image: primaryImage,
     options: [
@@ -890,8 +903,10 @@ app.post('/api/admin/products', upload.array('images'), async (req, res) => {
     if (isMultipart) {
       for (const f of req.files) {
         // processedImages.push(`/images/products/${f.filename}`); 
-        const fileName =
-`${Date.now()}-${crypto.randomBytes(6).toString("hex")}`;
+        const ext = path.extname(f.originalname);
+
+const fileName =
+`${Date.now()}-${crypto.randomBytes(6).toString("hex")}${ext}`;
 
 const { error } =
 await supabase.storage
@@ -980,9 +995,10 @@ app.put('/api/admin/products/:id', upload.array('images'), async (req, res) => {
     if (req.files && req.files.length > 0) {
       for (const f of req.files) {
         // processedImages.push(`/images/products/${f.filename}`);
-        const fileName =
-`${Date.now()}-${crypto.randomBytes(6).toString("hex")}`;
+        const ext = path.extname(f.originalname);
 
+const fileName =
+`${Date.now()}-${crypto.randomBytes(6).toString("hex")}${ext}`;
 const { error } =
 await supabase.storage
 .from("Products")
